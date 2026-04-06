@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Academic Quiz</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>* { box-sizing: border-box; margin: 0; padding: 0; }</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    const questions = [
+      { id:1, subject:"Science", question:"Which organelle is known as the powerhouse of the cell?", options:["Nucleus","Mitochondria","Ribosome","Golgi Apparatus"], answer:1 },
+      { id:2, subject:"Science", question:"What is the chemical formula for water?", options:["H₂O₂","HO","H₂O","H₃O"], answer:2 },
+      { id:3, subject:"Science", question:"Which planet is known as the Red Planet?", options:["Venus","Jupiter","Saturn","Mars"], answer:3 },
+      { id:4, subject:"Science", question:"What is the speed of light (approx.) in a vacuum?", options:["3×10⁶ m/s","3×10⁸ m/s","3×10¹⁰ m/s","3×10⁴ m/s"], answer:1 },
+      { id:5, subject:"Maths", question:"What is the value of √144?", options:["11","14","12","13"], answer:2 },
+      { id:6, subject:"Maths", question:"Solve: 3x + 5 = 20. What is x?", options:["4","5","6","7"], answer:1 },
+      { id:7, subject:"Maths", question:"What is the area of a circle with radius 7? (Use π ≈ 22/7)", options:["144 sq units","154 sq units","164 sq units","174 sq units"], answer:1 },
+      { id:8, subject:"English", question:"Choose the correct sentence:", options:["She don't like coffee.","She doesn't likes coffee.","She doesn't like coffee.","She not like coffee."], answer:2 },
+      { id:9, subject:"English", question:"What is the synonym of 'Abundant'?", options:["Scarce","Plentiful","Meager","Limited"], answer:1 },
+      { id:10, subject:"English", question:"Identify the figure of speech: 'The wind whispered through the trees.'", options:["Simile","Metaphor","Personification","Hyperbole"], answer:2 },
+    ];
+
+    const TIMER_MAX = 30;
+    const subjectColors = { Science:"#3b82f6", Maths:"#8b5cf6", English:"#10b981" };
+    const subjectBg = { Science:"#eff6ff", Maths:"#f5f3ff", English:"#ecfdf5" };
+    const subjectCounts = { Science:4, Maths:3, English:3 };
+
+    function Quiz() {
+      const [screen, setScreen] = useState("start");
+      const [current, setCurrent] = useState(0);
+      const [selected, setSelected] = useState(null);
+      const [answered, setAnswered] = useState(false);
+      const [scores, setScores] = useState({ Science:0, Maths:0, English:0 });
+      const [timer, setTimer] = useState(TIMER_MAX);
+      const [timeUp, setTimeUp] = useState(false);
+
+      const q = questions[current];
+
+      const handleTimeUp = useCallback(() => {
+        if (!answered) { setTimeUp(true); setAnswered(true); }
+      }, [answered]);
+
+      useEffect(() => {
+        if (screen !== "quiz" || answered) return;
+        if (timer === 0) { handleTimeUp(); return; }
+        const t = setTimeout(() => setTimer(v => v - 1), 1000);
+        return () => clearTimeout(t);
+      }, [screen, timer, answered, handleTimeUp]);
+
+      const handleSelect = (i) => {
+        if (answered) return;
+        setSelected(i);
+        setAnswered(true);
+        if (i === q.answer) setScores(s => ({ ...s, [q.subject]: s[q.subject] + 1 }));
+      };
+
+      const handleNext = () => {
+        if (current + 1 >= questions.length) { setScreen("result"); return; }
+        setCurrent(c => c + 1);
+        setSelected(null); setAnswered(false); setTimeUp(false); setTimer(TIMER_MAX);
+      };
+
+      const restart = () => {
+        setCurrent(0); setSelected(null); setAnswered(false);
+        setScores({ Science:0, Maths:0, English:0 });
+        setTimer(TIMER_MAX); setTimeUp(false); setScreen("start");
+      };
+
+      const totalScore = Object.values(scores).reduce((a,b) => a+b, 0);
+      const pct = Math.round((totalScore / questions.length) * 100);
+      const grade = pct>=80?"Excellent":pct>=60?"Good":pct>=40?"Needs Improvement":"Keep Practicing";
+      const gradeColor = pct>=80?"#10b981":pct>=60?"#3b82f6":pct>=40?"#f59e0b":"#ef4444";
+
+      const s = { minHeight:"100vh", background:"#f8fafc", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Segoe UI',sans-serif" };
+      const card = { background:"#fff", borderRadius:16, padding:40, maxWidth:540, width:"90%", boxShadow:"0 4px 24px rgba(0,0,0,0.08)" };
+      const btn = { background:"#3b82f6", color:"#fff", border:"none", borderRadius:10, padding:"13px 0", fontSize:15, fontWeight:700, cursor:"pointer", width:"100%", marginTop:20 };
+
+      if (screen === "start") return (
+        <div style={s}><div style={{...card, textAlign:"center"}}>
+          <div style={{fontSize:52,marginBottom:12}}>📚</div>
+          <h1 style={{fontSize:26,fontWeight:700,color:"#1e293b",marginBottom:8}}>Academic Quiz</h1>
+          <p style={{color:"#64748b",marginBottom:24,fontSize:15}}>Test your knowledge across Science, Maths & English</p>
+          <div style={{display:"flex",justifyContent:"center",gap:10,marginBottom:28,flexWrap:"wrap"}}>
+            {["Science","Maths","English"].map(sub=>(
+              <span key={sub} style={{background:subjectBg[sub],color:subjectColors[sub],border:`1px solid ${subjectColors[sub]}44`,borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:600}}>{sub}</span>
+            ))}
+          </div>
+          <div style={{background:"#f8fafc",borderRadius:10,padding:16,marginBottom:24,textAlign:"left"}}>
+            {[["📝","10 Questions","Moderate difficulty"],["⏱️","30 sec/question","Answer before time runs out"],["🏆","Instant Results","Score breakdown by subject"]].map(([icon,title,sub])=>(
+              <div key={title} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+                <span style={{fontSize:20}}>{icon}</span>
+                <div><div style={{fontSize:14,fontWeight:600,color:"#1e293b"}}>{title}</div><div style={{fontSize:12,color:"#94a3b8"}}>{sub}</div></div>
+              </div>
+            ))}
+          </div>
+          <button onClick={()=>setScreen("quiz")} style={btn}>Start Quiz</button>
+        </div></div>
+      );
+
+      if (screen === "result") return (
+        <div style={s}><div style={card}>
+          <div style={{textAlign:"center",marginBottom:24}}>
+            <div style={{fontSize:52}}>{pct>=80?"🏆":pct>=60?"🎉":pct>=40?"📖":"💪"}</div>
+            <h2 style={{fontSize:24,fontWeight:700,color:"#1e293b",margin:"8px 0 4px"}}>Quiz Complete!</h2>
+            <p style={{color:"#64748b",fontSize:14}}>Here's how you performed</p>
+          </div>
+          <div style={{background:"#f8fafc",borderRadius:12,padding:20,textAlign:"center",marginBottom:20}}>
+            <div style={{fontSize:48,fontWeight:800,color:gradeColor}}>{totalScore}<span style={{fontSize:24,color:"#94a3b8"}}>/{questions.length}</span></div>
+            <div style={{fontSize:18,fontWeight:700,color:gradeColor,marginTop:4}}>{grade}</div>
+            <div style={{fontSize:13,color:"#64748b",marginTop:2}}>{pct}% Score</div>
+          </div>
+          <h3 style={{fontSize:15,fontWeight:700,color:"#1e293b",marginBottom:12}}>Subject Breakdown</h3>
+          {["Science","Maths","English"].map(sub=>{
+            const max=subjectCounts[sub], sc=scores[sub], sp=Math.round((sc/max)*100);
+            return (<div key={sub} style={{marginBottom:14}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                <span style={{fontSize:14,fontWeight:600,color:"#1e293b"}}>{sub}</span>
+                <span style={{fontSize:13,color:"#64748b"}}>{sc}/{max}</span>
+              </div>
+              <div style={{background:"#e2e8f0",borderRadius:8,height:8}}>
+                <div style={{background:subjectColors[sub],width:`${sp}%`,height:"100%",borderRadius:8}}/>
+              </div>
+            </div>);
+          })}
+          <button onClick={restart} style={btn}>Restart Quiz</button>
+        </div></div>
+      );
+
+      const timerPct = (timer/TIMER_MAX)*100;
+      const timerColor = timer>15?"#10b981":timer>7?"#f59e0b":"#ef4444";
+
+      return (
+        <div style={s}><div style={card}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <span style={{background:subjectBg[q.subject],color:subjectColors[q.subject],border:`1px solid ${subjectColors[q.subject]}44`,borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:600}}>{q.subject}</span>
+            <span style={{fontSize:13,color:"#94a3b8",fontWeight:500}}>Q {current+1} of {questions.length}</span>
+            <div style={{display:"flex",alignItems:"center",gap:6,background:`${timerColor}15`,border:`1px solid ${timerColor}44`,borderRadius:20,padding:"4px 12px"}}>
+              <span>⏱️</span><span style={{fontSize:14,fontWeight:700,color:timerColor}}>{timer}s</span>
+            </div>
+          </div>
+          <div style={{background:"#e2e8f0",borderRadius:8,height:6,marginBottom:12}}>
+            <div style={{background:"#3b82f6",width:`${((current+1)/questions.length)*100}%`,height:"100%",borderRadius:8}}/>
+          </div>
+          <div style={{background:"#e2e8f0",borderRadius:8,height:4,marginBottom:20}}>
+            <div style={{background:timerColor,width:`${timerPct}%`,height:"100%",borderRadius:8,transition:"width 1s linear"}}/>
+          </div>
+          <h2 style={{fontSize:18,fontWeight:700,color:"#1e293b",marginBottom:18,lineHeight:1.5}}>{q.question}</h2>
+          <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:20}}>
+            {q.options.map((opt,i)=>{
+              let bg="#f8fafc",border="#e2e8f0",color="#1e293b";
+              if(answered){
+                if(i===q.answer){bg="#ecfdf5";border="#10b981";color="#065f46";}
+                else if(i===selected&&i!==q.answer){bg="#fef2f2";border="#ef4444";color="#991b1b";}
+              }
+              return (
+                <button key={i} onClick={()=>handleSelect(i)} style={{background:bg,border:`1.5px solid ${border}`,borderRadius:10,padding:"12px 16px",textAlign:"left",fontSize:15,color,fontWeight:500,cursor:answered?"default":"pointer",display:"flex",alignItems:"center",gap:12}}>
+                  <span style={{width:26,height:26,borderRadius:"50%",background:border,color:(answered&&(i===q.answer||i===selected))?"#fff":"#94a3b8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0}}>
+                    {answered&&i===q.answer?"✓":answered&&i===selected&&i!==q.answer?"✗":String.fromCharCode(65+i)}
+                  </span>{opt}
+                </button>
+              );
+            })}
+          </div>
+          {answered && (
+            <div style={{background:timeUp?"#fff7ed":selected===q.answer?"#ecfdf5":"#fef2f2",border:`1px solid ${timeUp?"#fdba74":selected===q.answer?"#10b981":"#ef4444"}`,borderRadius:10,padding:"10px 16px",marginBottom:14,fontSize:14,color:timeUp?"#9a3412":selected===q.answer?"#065f46":"#991b1b",fontWeight:500}}>
+              {timeUp?"⏰ Time's up! Correct answer is highlighted.":selected===q.answer?"✅ Correct! Well done.":"❌ Incorrect. Correct answer is highlighted."}
+            </div>
+          )}
+          {answered && <button onClick={handleNext} style={btn}>{current+1>=questions.length?"View Results →":"Next Question →"}</button>}
+        </div></div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<Quiz />);
+  </script>
+</body>
+</html>
