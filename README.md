@@ -5,7 +5,7 @@ Put your knowledge to the test — you've got just 30 seconds per question. No c
 
 A fast-paced, interactive quiz app built for students who want to challenge themselves beyond the classroom. With instant feedback, a live countdown timer, and a detailed score breakdown at the end — this isn't just a quiz, it's a learning experience.
 🚀 Live Demo
-🔗 sambhawacademicquiz.netlify.app
+🔗 https://academicquizsambhaw26.netlify.app/
 ✨ Features
 
 🧠 10 Questions covering Science, Maths & English
